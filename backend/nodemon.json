@@ -1,0 +1,8 @@
+{
+  "ignore": [
+    "tmp_repos/**",
+    "tmp_uploads/**",
+    ".env"
+  ],
+  "ext": "js,json"
+}

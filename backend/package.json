@@ -1,0 +1,27 @@
+{
+  "name": "codebase-explainer-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "RAG-based codebase explainer backend (Express + Supabase + Gemini)",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon --ignore tmp_repos/** --ignore tmp_uploads/** --ignore .env src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "adm-zip": "^0.5.15",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "simple-git": "^3.25.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
