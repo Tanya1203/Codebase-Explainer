@@ -10,7 +10,7 @@ import {
   Lock,
   ChevronRight,
 } from "lucide-react";
-import { requestUpgrade } from "../api.js";
+import {   createPaymentOrder,verifyPayment, } from "../api.js";
 
 const plans = [
   {
@@ -34,6 +34,22 @@ const plans = [
   },
 ];
 
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+
+    document.body.appendChild(script);
+  });
+}
+
 export default function UpgradePrompt({ onUnlocked }) {
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(plans[1]);
@@ -48,28 +64,77 @@ export default function UpgradePrompt({ onUnlocked }) {
     setError(null);
   };
 
-  const handlePayment = async () => {
-    setLoading(true);
-    setError(null);
 
-    try {
-      // Demo checkout.
-      // Replace this with Razorpay/Stripe verification later.
-      await requestUpgrade(selectedPlan.credits);
+const handlePayment = async () => {
+  setLoading(true);
+  setError(null);
 
-      setSuccess(true);
+  try {
+    const loaded = await loadRazorpayScript();
 
-      setTimeout(() => {
-        onUnlocked?.();
-        setShowCheckout(false);
-        setSuccess(false);
-      }, 1200);
-    } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+    if (!loaded) {
+      throw new Error("Unable to load Razorpay Checkout.");
     }
-  };
+
+    const planId = selectedPlan.name.toLowerCase();
+
+    // Create the order on the backend.
+    const order = await createPaymentOrder(planId);
+
+    const checkout = new window.Razorpay({
+      key: order.keyId,
+      amount: order.amount,
+      currency: order.currency,
+      name: "Codebase Explainer",
+      description: `${selectedPlan.name} Plan`,
+      order_id: order.orderId,
+
+      handler: async (response) => {
+        try {
+          // Credits are granted only after backend verification.
+          await verifyPayment(response);
+
+          setSuccess(true);
+
+          setTimeout(() => {
+            onUnlocked?.();
+            setShowCheckout(false);
+            setSuccess(false);
+          }, 1200);
+        } catch (err) {
+          setError(
+            err.message ||
+              "Payment verification failed. Please contact support if you were charged."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+
+      theme: {
+        color: "#8b5cf6",
+      },
+
+      modal: {
+        ondismiss: () => setLoading(false),
+      },
+    });
+
+    checkout.on("payment.failed", (response) => {
+      setError(
+        response.error?.description ||
+          "Payment failed. Please try again."
+      );
+      setLoading(false);
+    });
+
+    checkout.open();
+  } catch (err) {
+    setError(err.message || "Unable to start payment.");
+    setLoading(false);
+  }
+};
+
 
   return (
     <>
@@ -368,7 +433,7 @@ export default function UpgradePrompt({ onUnlocked }) {
                         ) : (
                           <>
                             <Lock size={15} />
-                            Pay ₹{selectedPlan.price} · Demo
+                            Pay ₹{selectedPlan.price}
                           </>
                         )}
                       </button>

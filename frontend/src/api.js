@@ -49,5 +49,16 @@ export const getBillingStatus = () => request('/billing/status');
 
 // Dev-stub only — see billing.controller.js on the backend. Real Stripe
 // checkout would replace what this calls, not how the frontend calls it.
-export const requestUpgrade = (amount = 50) =>
-  request('/billing/upgrade', { method: 'POST', body: JSON.stringify({ amount }) });
+
+export const createPaymentOrder = (planId) =>
+  request('/billing/create-order', {
+    method: 'POST',
+    body: JSON.stringify({ planId }),
+  });
+
+export const verifyPayment = (paymentResponse) =>
+  request('/billing/verify-payment', {
+    method: 'POST',
+    body: JSON.stringify(paymentResponse),
+  });
+
